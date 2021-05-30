@@ -31,18 +31,16 @@ def parse_homework_status(homework):
     status = {
         'rejected': 'К сожалению в работе нашлись ошибки.',
         'approved': ('Ревьюеру всё понравилось, можно '
-                     'приступать к следующему уроку.'),
-        'reviewing': 'работа взята в ревью.'
+                     'приступать к следующему уроку.')
     }
     try:
         homework_name = homework["homework_name"]
+        if homework["status"] == 'reviewing':
+            return (f'Работа "{homework_name}" взята в ревью')
         return (f'У вас проверили работу "{homework_name}"!\n\n'
                 f'{status[homework["status"]]}')
     except KeyError as error:
         logger.error(f'Ключ {error} не найден', exc_info=True)
-        raise
-    except UnboundLocalError:
-        logger.error("Статус домашней работы не найден", exc_info=True)
         raise
 
 
@@ -56,6 +54,9 @@ def get_homework_statuses(current_timestamp):
         return homework_statuses.json()
     except json.JSONDecodeError:
         logger.error("Ответ не соотвествует формату json", exc_info=True)
+        raise
+    except requests.RequestException:
+        logger.error("При обработке запроса возникла ошибка", exc_info=True)
         raise
 
 
@@ -75,10 +76,9 @@ def main():
                 logging.info("Message send")
             current_timestamp = new_homework.get(
                 'current_date', current_timestamp)
-            time.sleep(300)
-
         except Exception as e:
             logger.error(f'Бот столкнулся с ошибкой: {e}')
+        finally:
             time.sleep(300)
 
 
